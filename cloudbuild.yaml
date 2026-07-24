@@ -1,5 +1,12 @@
 steps:
-- name: 'docker'
-  args: ['build','-t','gcr.io/$PROJECT_ID/gcpdevops','.']
+- name: 'gcr.io/cloud-builders/docker'
+  args:
+    - 'build'
+    - '-t'
+    - 'us-central1-docker.pkg.dev/prj-mrdn-retail-dev/gcp-artifact-registry/gcpdevops:$COMMIT_SHA'
+    - '-t'
+    - 'us-central1-docker.pkg.dev/prj-mrdn-retail-dev/gcp-artifact-registry/gcpdevops:latest'
+    - '.'
 images:
-- 'gcr.io/$PROJECT_ID/gcpdevops'
+- 'us-central1-docker.pkg.dev/prj-mrdn-retail-dev/gcp-artifact-registry/gcpdevops:$COMMIT_SHA'
+- 'us-central1-docker.pkg.dev/prj-mrdn-retail-dev/gcp-artifact-registry/gcpdevops:latest'
