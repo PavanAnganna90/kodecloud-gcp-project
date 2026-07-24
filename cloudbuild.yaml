@@ -10,3 +10,5 @@ steps:
 images:
 - 'us-central1-docker.pkg.dev/prj-mrdn-retail-dev/gcp-artifact-registry/gcpdevops:$COMMIT_SHA'
 - 'us-central1-docker.pkg.dev/prj-mrdn-retail-dev/gcp-artifact-registry/gcpdevops:latest'
+options:
+  logging: CLOUD_LOGGING_ONLY
