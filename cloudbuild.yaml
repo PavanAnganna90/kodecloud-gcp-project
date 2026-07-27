@@ -22,7 +22,7 @@ steps:
   - name: 'gcr.io/cloud-builders/gke-deploy'
     args:
       - 'run'
-      - '--filename=k8s/deployment.yaml'
+      - '--filename=k8s'
       - '--image=us-central1-docker.pkg.dev/$PROJECT_ID/gcp-artifact-registry/gcpdevops:$COMMIT_SHA'
       - '--location=us-central1-a'
       - '--cluster=gke-retail-dev'
