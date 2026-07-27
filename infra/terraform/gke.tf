@@ -1,3 +1,7 @@
+# GKE cluster + node pool.
+# User inputs: cluster_name, zone, machine_type, node counts, node_network_tags
+#              (all from terraform.tfvars — do not hardcode project-specific values here).
+
 resource "google_container_cluster" "primary" {
   provider = google-beta
 
@@ -85,10 +89,10 @@ resource "google_container_node_pool" "primary" {
     }
 
     labels = {
-      env = "dev"
+      managed-by = "terraform"
     }
 
-    tags = ["gke-node", "retail-dev"]
+    tags = var.node_network_tags
   }
 
   management {

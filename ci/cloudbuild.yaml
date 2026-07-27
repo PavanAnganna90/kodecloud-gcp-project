@@ -1,0 +1,66 @@
+# Plug-in CI pipeline. Align trigger substitutions with config.env.example.
+
+substitutions:
+  _APP_NAME: gcpdevops
+  _AR_REGION: us-central1
+  _AR_REPO: gcp-artifact-registry
+  _GKE_CLUSTER: gke-retail-dev
+  _GKE_LOCATION: us-central1-a
+  _K8S_NAMESPACE: gcp-kodecloud-prod-namespace
+  _KUSTOMIZE_OVERLAY: deploy/k8s/overlays/default
+
+steps:
+  # 1) Build image from app/
+  - name: gcr.io/cloud-builders/docker
+    id: build
+    args:
+      - build
+      - -t
+      - ${_AR_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_APP_NAME}:$COMMIT_SHA
+      - -t
+      - ${_AR_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_APP_NAME}:latest
+      - app
+
+  # 2) Push image tags
+  - name: gcr.io/cloud-builders/docker
+    id: push
+    args:
+      - push
+      - --all-tags
+      - ${_AR_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_APP_NAME}
+
+  # 3) Render Kustomize overlay for this commit
+  - name: gcr.io/cloud-builders/kubectl
+    id: render
+    entrypoint: bash
+    args:
+      - -ce
+      - |
+        curl -sL "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.4.3/kustomize_v5.4.3_linux_amd64.tar.gz" \
+          | tar -xz -C /workspace
+        KUSTOMIZE=/workspace/kustomize
+        IMAGE="${_AR_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_APP_NAME}"
+
+        cd ${_KUSTOMIZE_OVERLAY}
+        "$$KUSTOMIZE" edit set namespace "${_K8S_NAMESPACE}"
+        "$$KUSTOMIZE" edit set nameprefix "${_APP_NAME}-"
+        "$$KUSTOMIZE" edit set image "APP_IMAGE=$${IMAGE}:$COMMIT_SHA"
+        "$$KUSTOMIZE" edit set label "app.kubernetes.io/name:${_APP_NAME}" --include-selectors --include-templates
+        "$$KUSTOMIZE" build . > /workspace/manifests.yaml
+
+        echo "---- rendered manifests ----"
+        cat /workspace/manifests.yaml
+
+  # 4) Deploy to GKE
+  - name: gcr.io/cloud-builders/gke-deploy
+    id: deploy
+    args:
+      - run
+      - --filename=/workspace/manifests.yaml
+      - --image=${_AR_REGION}-docker.pkg.dev/$PROJECT_ID/${_AR_REPO}/${_APP_NAME}:$COMMIT_SHA
+      - --location=${_GKE_LOCATION}
+      - --cluster=${_GKE_CLUSTER}
+      - --namespace=${_K8S_NAMESPACE}
+
+options:
+  logging: CLOUD_LOGGING_ONLY

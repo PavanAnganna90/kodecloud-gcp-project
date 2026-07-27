@@ -1,0 +1,20 @@
+# =============================================================================
+# USER INPUT — Terraform remote state (GCS)
+# =============================================================================
+# Real-world pattern: state lives in a shared GCS bucket, one prefix per stack.
+#
+# 1. Copy this file:
+#      cp backend.hcl.example backend.hcl
+# 2. Fill in bucket + prefix below.
+# 3. Init with:
+#      terraform init -backend-config=backend.hcl
+#
+# Where to get values:
+#   bucket  → Console: Cloud Storage → your tfstate bucket
+#             or: gcloud storage buckets list
+#   prefix  → You choose a unique path, e.g. workloads/<project_id>/gke
+#             Must not collide with another team's state.
+# =============================================================================
+
+bucket = "prj-seed-74ba49-tfstate"
+prefix = "workloads/prj-mrdn-retail-dev/gke"

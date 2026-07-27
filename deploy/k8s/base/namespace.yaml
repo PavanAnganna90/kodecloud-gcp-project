@@ -1,0 +1,6 @@
+# The overlay's `namespace:` field rewrites metadata.name here, so this value
+# is a placeholder and should not be edited.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: app

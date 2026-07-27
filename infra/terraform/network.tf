@@ -1,4 +1,6 @@
-# Existing Shared VPC (owned by network foundation Terraform — do not create here).
+# Looks up an EXISTING Shared VPC (not created here).
+# User inputs: network_host_project_id, network_name, subnet_name, region
+# Where to get them: see terraform.tfvars.example [REQUIRED] Shared VPC section.
 
 data "google_compute_network" "shared" {
   name    = var.network_name

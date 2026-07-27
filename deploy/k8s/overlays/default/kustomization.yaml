@@ -1,0 +1,34 @@
+# Example overlay for the sample Flask app.
+# Copy this folder (e.g. overlays/myapp) and change values for your app.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: gcp-kodecloud-prod-namespace
+
+resources:
+  - ../../base
+
+namePrefix: gcpdevops-
+
+images:
+  - name: APP_IMAGE
+    newName: us-central1-docker.pkg.dev/prj-mrdn-retail-dev/gcp-artifact-registry/gcpdevops
+    newTag: latest
+
+labels:
+  - pairs:
+      app.kubernetes.io/name: gcpdevops
+    includeSelectors: true
+    includeTemplates: true
+
+patches:
+  - target:
+      kind: Deployment
+      name: app
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/ports/0/containerPort
+        value: 5000
+      - op: replace
+        path: /spec/template/spec/containers/0/env/0/value
+        value: "5000"

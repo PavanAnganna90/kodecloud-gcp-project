@@ -1,3 +1,6 @@
+# Node service account + IAM for Artifact Registry, logging, monitoring, Shared VPC.
+# User inputs: project_id, network_host_project_id (terraform.tfvars).
+
 data "google_project" "service" {
   project_id = var.project_id
 }
