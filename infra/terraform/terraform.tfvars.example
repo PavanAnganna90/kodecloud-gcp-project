@@ -1,0 +1,145 @@
+# =============================================================================
+# USER INPUT FILE — copy to terraform.tfvars and edit
+# =============================================================================
+#   cp terraform.tfvars.example terraform.tfvars
+#
+# This file is the only place most users need to change for base GKE infra.
+# It does NOT deploy your app container (that is deploy/k8s + ci/cloudbuild.yaml).
+#
+# Legend:
+#   [REQUIRED]  must set for your environment
+#   [OPTIONAL]  safe defaults exist; change when you need to
+# =============================================================================
+
+
+# -----------------------------------------------------------------------------
+# [REQUIRED] Who / where
+# -----------------------------------------------------------------------------
+
+# GCP project where the GKE cluster will live (service project).
+# Where to get it:
+#   Console project picker (project ID, not display name)
+#   or: gcloud config get-value project
+#   or: gcloud projects list
+project_id = "prj-mrdn-retail-dev"
+
+# Region + zone for the zonal Standard cluster.
+# Where to get it:
+#   https://cloud.google.com/compute/docs/regions-zones
+#   Pick a zone in the same region as your Shared VPC subnet.
+region = "us-central1"
+zone   = "us-central1-a"
+
+# Service account Terraform will impersonate (company-style apply identity).
+# Where to get it:
+#   Console: IAM → Service Accounts → email ending in .iam.gserviceaccount.com
+#   That SA needs permission to create GKE/IAM in project_id and networkUser
+#   on the Shared VPC host (or you use a bootstrap/owner SA).
+#   Your user needs roles/iam.serviceAccountTokenCreator on this SA.
+terraform_service_account = "sa-tf-bootstrap-apply@prj-seed-74ba49.iam.gserviceaccount.com"
+
+
+# -----------------------------------------------------------------------------
+# [REQUIRED] Shared VPC (network is usually owned by a platform/network project)
+# -----------------------------------------------------------------------------
+
+# Host project that owns the Shared VPC.
+# Where to get it:
+#   Console: VPC network → VPC networks → look at "Shared VPC host project"
+#   or: gcloud compute shared-vpc get-host-project YOUR_SERVICE_PROJECT
+network_host_project_id = "prj-mrdn-network-prod"
+
+# VPC network name inside the host project.
+# Where to get it:
+#   Console (host project): VPC network → VPC networks → Name
+#   or: gcloud compute networks list --project=HOST_PROJECT
+network_name = "vpc-mrdn-shared"
+
+# Subnet your GKE nodes will use (must be usable by the service project).
+# Where to get it:
+#   Console (host project): VPC network → VPC networks → network → Subnets
+#   or: gcloud compute networks subnets list --project=HOST_PROJECT
+#   Need Private Google Access = on for private nodes pulling images.
+subnet_name = "sb-retail-nonprod"
+
+# Secondary ranges on that subnet for Pods and Services (VPC-native GKE).
+# Where to get it:
+#   Console: open the subnet → Secondary IP ranges → Range name
+#   or: gcloud compute networks subnets describe SUBNET --region=REGION --project=HOST_PROJECT
+pods_secondary_range_name     = "gke-pods"
+services_secondary_range_name = "gke-services"
+
+
+# -----------------------------------------------------------------------------
+# [REQUIRED] GKE cluster identity
+# -----------------------------------------------------------------------------
+
+# Cluster name (must be unique in the project/zone).
+# Where to get it: you choose it. Example: gke-<team>-<env>
+cluster_name = "gke-retail-dev"
+
+# Short prefix used in resource descriptions and labels.
+# Where to get it: you choose it. Keep short, lowercase, no spaces.
+name_prefix = "app"
+
+
+# -----------------------------------------------------------------------------
+# [OPTIONAL] Artifact Registry (where CI pushes your image)
+# -----------------------------------------------------------------------------
+
+# Docker repo ID. Must match _AR_REPO in ci/cloudbuild.yaml, because the image
+# path is built as: <region>-docker.pkg.dev/<project_id>/<repo>/<app>
+# Where to get it: you choose it. Lowercase, hyphens allowed.
+artifact_registry_repo = "gcp-artifact-registry"
+
+# Leave commented to use var.region. Set only if the repo lives elsewhere.
+# artifact_registry_location = "us-central1"
+
+# Set false when the repo already exists, or a platform team owns it centrally.
+# Terraform will otherwise fail with "already exists" on a repo it does not track.
+# To adopt an existing repo instead, see the import command in README.md.
+create_artifact_registry = true
+
+# Delete untagged images after this long. Every rebuild leaves untagged layers
+# behind that nothing pulls, and you pay storage on them.
+artifact_registry_untagged_retention = "2592000s" # 30 days
+
+# Identities allowed to push images. Usually the Cloud Build service account.
+# Where to get it: Console → IAM → Service Accounts in project_id, or the SA
+# configured on your Cloud Build trigger.
+image_pusher_members = [
+  "serviceAccount:sa-permission-cloudbuild@prj-mrdn-retail-dev.iam.gserviceaccount.com",
+]
+
+
+# -----------------------------------------------------------------------------
+# [OPTIONAL] Node pool sizing / tags
+# -----------------------------------------------------------------------------
+
+# Node pool name inside the cluster.
+node_pool_name = "default-pool"
+
+# Extra network tags on nodes, in case you write your own firewall rules.
+# You do NOT need these for LoadBalancer Services: GKE adds its own
+# gke-<cluster>-<hash>-node tag and creates matching host-project rules itself,
+# as long as iam.tf granted the GKE service agent access on the host project.
+node_network_tags = ["gke-node"]
+
+# Machine type for nodes.
+# Where to get it: https://cloud.google.com/compute/docs/machine-resource
+machine_type = "e2-medium"
+
+# Boot disk size (GB) per node.
+disk_size_gb = 50
+
+# Fixed count when enable_autoscaling = false.
+node_count = 1
+
+# Autoscaling bounds when enable_autoscaling = true.
+enable_autoscaling = true
+min_node_count     = 1
+max_node_count     = 2
+
+# GKE release channel: RAPID | REGULAR | STABLE
+# Where to get it: https://cloud.google.com/kubernetes-engine/docs/concepts/release-channels
+release_channel = "REGULAR"

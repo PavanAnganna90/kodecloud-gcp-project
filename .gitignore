@@ -1,0 +1,7 @@
+# Local secrets / machine files
+config.env
+**/.terraform/
+**/terraform.tfvars
+**/*.tfstate
+**/*.tfstate.*
+.DS_Store
