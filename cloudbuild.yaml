@@ -1,14 +1,32 @@
 steps:
-- name: 'gcr.io/cloud-builders/docker'
-  args:
-    - 'build'
-    - '-t'
-    - 'us-central1-docker.pkg.dev/prj-mrdn-retail-dev/gcp-artifact-registry/gcpdevops:$COMMIT_SHA'
-    - '-t'
-    - 'us-central1-docker.pkg.dev/prj-mrdn-retail-dev/gcp-artifact-registry/gcpdevops:latest'
-    - '.'
-images:
-- 'us-central1-docker.pkg.dev/prj-mrdn-retail-dev/gcp-artifact-registry/gcpdevops:$COMMIT_SHA'
-- 'us-central1-docker.pkg.dev/prj-mrdn-retail-dev/gcp-artifact-registry/gcpdevops:latest'
+  # build the container image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-f'
+      - 'dockerfile'
+      - '-t'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/gcp-artifact-registry/gcpdevops:$COMMIT_SHA'
+      - '-t'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/gcp-artifact-registry/gcpdevops:latest'
+      - '.'
+
+  # push container image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - '--all-tags'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/gcp-artifact-registry/gcpdevops'
+
+  # deploy container image to GKE
+  - name: 'gcr.io/cloud-builders/gke-deploy'
+    args:
+      - 'run'
+      - '--filename=k8s/deployment.yaml'
+      - '--image=us-central1-docker.pkg.dev/$PROJECT_ID/gcp-artifact-registry/gcpdevops:$COMMIT_SHA'
+      - '--location=us-central1-a'
+      - '--cluster=gke-retail-dev'
+      - '--namespace=default'
+
 options:
   logging: CLOUD_LOGGING_ONLY
